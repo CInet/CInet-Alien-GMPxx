@@ -1,0 +1,26 @@
+use alienfile;
+use autodie;
+
+share {
+    requires 'Alien::m4' => '0.08';
+
+    start_url 'gmp-6.2.0/';
+    plugin 'Fetch::LocalDir';
+    plugin 'Extract::Directory';
+
+    plugin 'Build::Autoconf' => ();
+    build [
+        '%{configure} --enable-shared --enable-static --enable-cxx',
+        '%{make}',
+        '%{make} check',
+        '%{make} install',
+    ];
+
+    plugin 'Gather::IsolateDynamic';
+};
+
+gather sub {
+    my $build = shift;
+    $build->runtime_prop->{$_} = "-I@{[ $build->runtime_prop->{prefix} ]}/include " for qw( cflags cflags_static );
+    $build->runtime_prop->{$_} = "-L@{[ $build->runtime_prop->{prefix} ]}/lib -lgmp -lgmpxx " for qw( libs libs_static );
+};
